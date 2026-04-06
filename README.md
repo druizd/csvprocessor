@@ -17,26 +17,19 @@ La aplicación levanta silenciosamente un pequeño servidor interno asíncrono p
 
 **URL de Acceso Base:** `http://<IP-DE-ESTE-SERVIDOR>:<API_PORT>`
 
-### 1. `GET /health`
-Avisa de forma simple si el servicio está andando al 100% como demonio sin bloqueos fantasma en el Loop del hilo principal.
-```json
-{
-  "status": "UP",
-  "uptime": "56m12s"
-}
-```
-
-### 2. `GET /metrics`
-Ofrece las mecánicas del sistema recuperadas de la caché atómica, demostrando la fluidez sin comprometer megabytes ni causar pausas de lectura dentro de tu disco virtual.
-```json
-{
-  "archivos_fallidos": 0,
-  "archivos_procesados": 125,
-  "promedio_proceso_ms": 11,
-  "tiempo_maximo_ms": 42
-}
-```
-*(Nota: El "tiempo_maximo_ms" captura el archivo que ha costado más milisegundos a la máquina procesar desde que se encendió el servicio).*
+**Puntos Finales (Endpoints):**
+Tanto **GET `/health`** como **GET `/metrics`** despachan el mismo paquete JSON global a tiempo real. Puedes usar cualquiera.
+  ```json
+  {
+    "status": "UP",
+    "uptime": "1h20m5s",
+    "archivos_fallidos": 0,
+    "archivos_procesados": 1500,
+    "promedio_proceso_ms": 11,
+    "tiempo_maximo_ms": 34
+  }
+  ```
+*(Nota: El tiempo de uptime se muestra redondeado a segundos fijos, mientras que los promedios de proceso se entregan en Milisegundos para mayor detalle).*
 
 ---
 

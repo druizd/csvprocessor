@@ -43,44 +43,40 @@ func RecordMetrics(success bool, durationMs uint64) {
 	}
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	uptime := time.Since(startTime).String()
-	response := map[string]string{
-		"status": "UP",
-		"uptime": uptime,
-	}
-	json.NewEncoder(w).Encode(response)
-}
-
-func metricsHandler(w http.ResponseWriter, r *http.Request) {
+func statusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	processed := atomic.LoadUint64(&filesProcessed)
 	failed := atomic.LoadUint64(&filesFailed)
-	totalTime := atomic.LoadUint64(&totalProcessingTimeMs)
-	maxTime := atomic.LoadUint64(&maxProcessingTimeMs)
+	totalTimeMs := atomic.LoadUint64(&totalProcessingTimeMs)
+	maxTimeMs := atomic.LoadUint64(&maxProcessingTimeMs)
 
-	var avgTime uint64 = 0
+	var avgTimeMs uint64 = 0
 	if processed > 0 {
-		avgTime = totalTime / processed
+		avgTimeMs = totalTimeMs / processed
 	}
 
+	// Redondeo del Uptime para eliminar milisegundos/microsegundos
+	uptime := time.Since(startTime).Round(time.Second).String()
+
 	response := map[string]interface{}{
+		"status":               "UP",
+		"uptime":               uptime,
 		"archivos_procesados":  processed,
 		"archivos_fallidos":    failed,
-		"promedio_proceso_ms":  avgTime,
-		"tiempo_maximo_ms":     maxTime,
+		"promedio_proceso_ms":  avgTimeMs,
+		"tiempo_maximo_ms":     maxTimeMs,
 	}
 	json.NewEncoder(w).Encode(response)
 }
 
 func StartServer(port int) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", healthHandler)
-	mux.HandleFunc("/metrics", metricsHandler)
+	
+	// Consolidado: Ambas antiguas rutas devolverán ahora la vista completa
+	mux.HandleFunc("/health", statusHandler)
+	mux.HandleFunc("/metrics", statusHandler)
 
 	addr := fmt.Sprintf("0.0.0.0:%d", port) // 0.0.0.0 para acceso externo
 	logger.Event("Iniciando API de Auditoría Remota en %s", addr)

@@ -26,17 +26,35 @@ func LoadConfig(filename string) (*Config, error) {
 	baseDir := filepath.Dir(exePath)
 	path := filepath.Join(baseDir, filename)
 
+	cfg := &Config{}
+	
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("error al abrir archivo de configuración: %w", err)
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-	cfg := &Config{}
-	err = decoder.Decode(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("error al decodificar JSON: %w", err)
+		if os.IsNotExist(err) {
+			// Si no existe, creamos su config.json de fabrica
+			cfg = &Config{
+				InputDir:          "./input",
+				SqlLogDir:         "./sqllog",
+				CsvLogDir:         "./csvlog",
+				LogsDir:           "./logs",
+				MaxAgents:         2,
+				MaxFilesPerAgent:  50,
+				DelayBeforeReadMs: 200,
+				ApiPort:           8080,
+			}
+			
+			fileBytes, _ := json.MarshalIndent(cfg, "", "  ")
+			os.WriteFile(path, fileBytes, 0666)
+		} else {
+			return nil, fmt.Errorf("error al abrir archivo de configuración: %w", err)
+		}
+	} else {
+		defer file.Close()
+		decoder := json.NewDecoder(file)
+		err = decoder.Decode(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("error al decodificar JSON: %w", err)
+		}
 	}
 
 	// Resolve absolute paths from binary dir
